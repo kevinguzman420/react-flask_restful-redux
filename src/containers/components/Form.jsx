@@ -1,17 +1,24 @@
+import React from 'react';
 import { Formik, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import axios from 'axios';
-import { toast } from 'react-toastify';
 import { Forms, FormGroup, Label, Input, Info, Btn } from '../layout/AppStyled';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { createUserAction, updateUserAction } from '../../redux/userDucks';
 
-function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating, setIsUpdating, userId, getUsers}) {
+
+function UserForm() {
+
+  const dispatch = useDispatch();
+  const user = useSelector(store => store.users.user);
+  const userIsUpdating = useSelector(store => store.users.userIsUpdating); // If an user is updating
+
   return (
     <Formik
       initialValues={{
-        name: name,
-        lastname: lastname,
-        age: age,
+        name: user.name || "",
+        lastname: user.lastname || "",
+        age: user.age || "",
       }}
       enableReinitialize={true}
       validationSchema={Yup.object().shape({
@@ -23,39 +30,21 @@ function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating
           .required("Please enter your lastname"),
         age: Yup.number().required("Enter your age."),
       })}
-      onSubmit={async (values, { setSubmitting, resetForm }) => {
-        if (!isUpdating) {
-          const response = await axios.post("/api/v1.0/users/", {
-            name: values.name,
-            lastname: values.lastname,
-            age: values.age,
-          });
-          console.log(response.data);
-          toast(response.data.response, {
-            type: "success",
-          });
+      onSubmit={(values, { setSubmitting, resetForm }) => {
+        if (!userIsUpdating) {
+          // Creating user
+          const res = dispatch(createUserAction(values.name, values.lastname, values.age));
+          console.log("res -> ", res);
         } else {
-          const response = await axios.put(`/api/v1.0/users/${userId}/`, {
-            name: values.name,
-            lastname: values.lastname,
-            age: values.age,
-          });
-          console.log(response.data);
-          setIsUpdating(false);
-          toast(response.data.response, {
-            type: "info",
-          });
+          // Updating user
+          const response = dispatch(updateUserAction(user.user_id, values.name, values.lastname, values.age));
+          // console.log("response.data.response  ", response);
         }
-        // Clear fields
-        setName("");
-        setLastname("");
-        setAge("");
-        getUsers();
         setSubmitting(false);
-        resetForm({});
+        resetForm({values: ""});
       }}
     >
-      {({ values, handleSubmit, handleChange }) => {
+      {({ values, handleSubmit, handleChange, handleBlur}) => {
         return (
           <Forms name="contact" onSubmit={handleSubmit}>
             <FormGroup>
@@ -65,8 +54,9 @@ function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating
                 name="name"
                 autoComplete="name"
                 placeholder="your name"
-                values={values.name}
+                values={user.name}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
               <ErrorMessage name="name">{(msg) => <Info>{msg}</Info>}</ErrorMessage>
             </FormGroup>
@@ -77,8 +67,9 @@ function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating
                 name="lastname"
                 autoComplete="lastname"
                 placeholder="your lastname"
-                value={values.lastname}
+                values={user.lastname}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
               <ErrorMessage name="lastname">
                 {(msg) => <Info>{msg}</Info>}
@@ -91,13 +82,14 @@ function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating
                 name="age"
                 autoComplete="age"
                 placeholder="your age"
-                values={values.age}
+                values={user.age}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
               <ErrorMessage name="age">{(msg) => <Info>{msg}</Info>}</ErrorMessage>
             </FormGroup>
             <FormGroup>
-              <Btn type="submit">{isUpdating ? "Update" : "Create"}</Btn>
+              <Btn type="submit">{userIsUpdating ? "Update" : "Create"}</Btn>
             </FormGroup>
           </Forms>
         );
@@ -105,5 +97,6 @@ function UserForm({name, setName, lastname, setLastname, age, setAge, isUpdating
     </Formik>
   )
 }
+
 
 export default UserForm;

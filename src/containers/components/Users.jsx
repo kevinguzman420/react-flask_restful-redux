@@ -1,31 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { connect } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Table, Thead, Th, Td, UserActions, UserIconAction } from '../layout/AppStyled';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { getUserAction, deleteUserAction } from '../../redux/userDucks';
 
-function Users({users, setIsUpdating, setUserId, setName, setLastname, setAge, getUsers}) {
+function Users() {
 
-        const updateUser = async id => {
-          const response = await axios.get(`/api/v1.0/users/${id}`);
-          setUserId(response.data.id);
-          setName(response.data.name);
-          setLastname(response.data.lastname);
-          setAge(response.data.age);
-          setIsUpdating(true);
-          }
-    
-      const deleteUser = async id => {
-        let confirm = window.confirm(`Are you sure you to delete this user ${id}?`);
-        if (confirm) {
-            const response = await axios.delete(`/api/v1.0/users/${id}/`);
-            getUsers();
-            toast(response.data.response, {
-                type: "error"
-            })
-            console.log(response.data);
-        }
-      }
+    const dispatch = useDispatch();
+    const users = useSelector(store => store.users.array);
 
     return (
         <Table>
@@ -38,32 +23,32 @@ function Users({users, setIsUpdating, setUserId, setName, setLastname, setAge, g
                 </tr>
             </Thead>
             {
-                users ? users.map(user => {
-                    return (
-                            <tbody key={user.id}>
-                                <tr>
-                                    <Td>{user.name}</Td>
-                                    <Td>{user.lastname}</Td>
-                                    <Td>{user.age}</Td>
-                                    <UserActions>
-                                        <UserIconAction
-                                            className="fas fa-pen"
-                                            onClick={() => updateUser(user.id)}
-                                        >
-                                        </UserIconAction>
+            <tbody>
+                {
+                    users ? users.map(user => (
+                                    <tr key={user.id}>
+                                        <Td>{user.name}</Td>
+                                        <Td>{user.lastname}</Td>
+                                        <Td>{user.age}</Td>
+                                        <UserActions>
+                                            <UserIconAction
+                                                className="fas fa-pen"
+                                                onClick={() => dispatch(getUserAction(user.id, user.name, user.lastname, user.age))}
+                                            >
+                                            </UserIconAction>
 
-                                        <UserIconAction
-                                            className="fas fa-trash"
-                                            onClick={() => deleteUser(user.id)}
-                                        >
-                                        </UserIconAction>
+                                            <UserIconAction
+                                                className="fas fa-trash"
+                                                onClick={() => dispatch(deleteUserAction(user.id))}
+                                            >
+                                            </UserIconAction>
 
-                                    </UserActions>
-                                </tr>
-                            </tbody>
-                        )
-                    })
-                    : null
+                                        </UserActions>
+                                    </tr>
+                    ))
+                        : null
+                }
+            </tbody>
             }
         </Table>
     )
